@@ -17,11 +17,26 @@ defmodule HttpRequestParser do
   """
   @spec parse(String.t()) :: Request.t()
   def parse(request_string) do
-    %Request{}
+    [head, body] = String.split(request_string, "\n\n", parts: 2)
+    [request | headers] = String.split(head, "\n")
+    [method, path, _] = String.split(request, " ")
+
+    %Request{
+      method: method,
+      path: path,
+      headers: parse_headers(headers),
+      body: body
+    }
   end
 
   @spec parse_headers([String.t()]) :: %{optional(String.t()) => String.t()}
   def parse_headers(headers) do
-    %{}
+    parsed = Enum.flat_map(headers, fn(h) ->
+      String.split(h, ": ")
+    end)
+
+    parsed
+    |> Enum.chunk_every(2)
+    |> Map.new(fn [k, v] -> {k, v} end)
   end
 end
